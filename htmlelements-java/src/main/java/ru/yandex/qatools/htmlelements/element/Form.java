@@ -2,6 +2,7 @@ package ru.yandex.qatools.htmlelements.element;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import ru.yandex.qatools.htmlelements.model.SelectValueModel;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -47,7 +48,7 @@ public class Form extends TypifiedElement {
         data.entrySet().stream()
                 .map(e -> new AbstractMap.SimpleEntry<>(
                         findElementByKey(e.getKey()),
-                        Objects.toString(e.getValue(), "")))
+                        e.getValue()))
                 .filter(e -> !isNull(e.getKey()))
                 .forEach(e -> fillElement(e.getKey(), e.getValue()));
     }
@@ -61,7 +62,7 @@ public class Form extends TypifiedElement {
         }
     }
 
-    protected void fillElement(WebElement element, String value) {
+    protected void fillElement(WebElement element, Object value) {
         String elementType = getElementType(element);
 
         if (CHECKBOX_FIELD.equals(elementType)) {
@@ -99,24 +100,47 @@ public class Form extends TypifiedElement {
         }
     }
 
-    protected void fillCheckBox(WebElement element, String value) {
-        new CheckBox(element).set(Boolean.parseBoolean(value));
+    protected void fillCheckBox(WebElement element, Object value) {
+        new CheckBox(element).set(Boolean.parseBoolean(Objects.toString(value, "")));
     }
 
-    protected void fillRadio(WebElement element, String value) {
-        new Radio(element).selectByValue(value);
+    protected void fillRadio(WebElement element, Object value) {
+        new Radio(element).selectByValue(Objects.toString(value, ""));
     }
 
-    protected void fillInput(WebElement element, String value) {
+    protected void fillInput(WebElement element, Object value) {
         TextInput input = new TextInput(element);
-        input.sendKeys(input.getClearCharSequence() + value);
+        input.sendKeys(input.getClearCharSequence() + Objects.toString(value, ""));
     }
 
-    protected void fillSelect(WebElement element, String value) {
+    protected void fillSelect(WebElement element, Object value) {
+        if (value instanceof SelectValueModel) {
+            SelectValueModel selectValueModel = (SelectValueModel) value;
+            if (SelectValueModel.FillStrategy.INDEX.equals(selectValueModel.getStrategy())) {
+                fillSelectByIndex(element, selectValueModel.getValue());
+            } else if (SelectValueModel.FillStrategy.TEXT.equals(selectValueModel.getStrategy())) {
+                fillSelectByText(element, selectValueModel.getValue());
+            } else if (SelectValueModel.FillStrategy.VALUE.equals(selectValueModel.getStrategy())) {
+                fillSelectByValue(element, selectValueModel.getValue());
+            }
+        } else {
+            fillSelectByValue(element, Objects.toString(value, ""));
+        }
+    }
+
+    protected void fillSelectByValue(WebElement element, String value) {
         new Select(element).selectByValue(value);
     }
 
-    protected void fillFile(WebElement element, String value) {
-        new FileInput(element).setFileToUpload(value);
+    protected void fillSelectByIndex(WebElement element, String value) {
+        new Select(element).selectByValue(value);
+    }
+
+    protected void fillSelectByText(WebElement element, String value) {
+        new Select(element).selectByVisibleText(value);
+    }
+
+    protected void fillFile(WebElement element, Object value) {
+        new FileInput(element).setFileToUpload(Objects.toString(value, ""));
     }
 }
