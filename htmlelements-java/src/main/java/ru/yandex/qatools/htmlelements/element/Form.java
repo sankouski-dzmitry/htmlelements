@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 /**
@@ -113,6 +114,31 @@ public class Form extends TypifiedElement {
     }
 
     protected void fillSelect(WebElement element, String value) {
+        String[] parsedValue = value.split("=");
+        Select select = new Select(element);
+
+        switch (parsedValue.length) {
+            case 1:
+                select.selectByValue(value);
+                break;
+            case 2:
+                switch (parsedValue[0].toLowerCase()) {
+                    case "index":
+                        select.selectByIndex(Integer.parseInt(parsedValue[1]));
+                        break;
+                    case "value":
+                        select.selectByValue(parsedValue[1]);
+                        break;
+                    case "text":
+                        select.selectByVisibleText(parsedValue[1]);
+                        break;
+                    default:
+                        select.selectByValue(value);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException(format("Cannot parse value %s for select element", value));
+        }
         new Select(element).selectByValue(value);
     }
 
